@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athenaa - Trading Analytics Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 2.5em;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .result-value {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            padding: 20px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #c33;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #3c3;
+        }
+
+        .portfolio-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .portfolio-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .portfolio-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .portfolio-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                gap: 5px;
+            }
+
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Athenaa Analytics</h1>
+            <p>Advanced Options Pricing & Portfolio Management</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('pricing')">Option Pricing</button>
+            <button class="tab-btn" onclick="switchTab('greeks')">Greeks</button>
+            <button class="tab-btn" onclick="switchTab('montecarlo')">Monte Carlo</button>
+            <button class="tab-btn" onclick="switchTab('market')">Market Data</button>
+            <button class="tab-btn" onclick="switchTab('portfolio')">Portfolio</button>
+        </div>
+
+        <!-- Option Pricing Tab -->
+        <div id="pricing" class="tab-content active">
+            <div class="card">
+                <h2>Black-Scholes Option Pricing</h2>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Stock Price (S)</label>
+                            <input type="number" id="bs_s" value="100" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Strike Price (K)</label>
+                            <input type="number" id="bs_k" value="100" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Time to Expiry (T) in years</label>
+                            <input type="number" id="bs_t" value="1" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Risk-free Rate (r)</label>
+                            <input type="number" id="bs_r" value="0.05" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Volatility (σ)</label>
+                            <input type="number" id="bs_sigma" value="0.2" step="0.01">
+                        </div>
+                        <button class="btn" onclick="calculateBS()">Calculate Price</button>
+                    </div>
+                    <div id="bs_result" class="result-box" style="display:none;">
+                        <div class="result-item">
+                            <span class="result-label">Call Option Price</span>
+                            <span class="result-value" id="bs_price">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Greeks Tab -->
+        <div id="greeks" class="tab-content">
+            <div class="card">
+                <h2>Option Greeks</h2>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Stock Price (S)</label>
+                            <input type="number" id="gr_s" value="100" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Strike Price (K)</label>
+                            <input type="number" id="gr_k" value="100" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Time to Expiry (T) in years</label>
+                            <input type="number" id="gr_t" value="1" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Risk-free Rate (r)</label>
+                            <input type="number" id="gr_r" value="0.05" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Volatility (σ)</label>
+                            <input type="number" id="gr_sigma" value="0.2" step="0.01">
+                        </div>
+                        <button class="btn" onclick="calculateGreeks()">Calculate Greeks</button>
+                    </div>
+                    <div id="greeks_result" class="result-box" style="display:none;">
+                        <div class="result-item">
+                            <span class="result-label">Delta (Δ)</span>
+                            <span class="result-value" id="greek_delta">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Gamma (Γ)</span>
+                            <span class="result-value" id="greek_gamma">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Vega (ν)</span>
+                            <span class="result-value" id="greek_vega">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Theta (Θ)</span>
+                            <span class="result-value" id="greek_theta">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Rho (ρ)</span>
+                            <span class="result-value" id="greek_rho">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monte Carlo Tab -->
+        <div id="montecarlo" class="tab-content">
+            <div class="card">
+                <h2>Monte Carlo Simulation & Risk Metrics</h2>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Stock Price (S)</label>
+                            <input type="number" id="mc_s" value="100" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Time to Expiry (T) in years</label>
+                            <input type="number" id="mc_t" value="1" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Risk-free Rate (r)</label>
+                            <input type="number" id="mc_r" value="0.05" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Volatility (σ)</label>
+                            <input type="number" id="mc_sigma" value="0.2" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Simulations</label>
+                            <input type="number" id="mc_n" value="5000" step="100">
+                        </div>
+                        <button class="btn" onclick="calculateMonteCarlo()">Run Simulation</button>
+                    </div>
+                    <div id="mc_result" class="result-box" style="display:none;">
+                        <div class="result-item">
+                            <span class="result-label">Expected Price</span>
+                            <span class="result-value" id="mc_mean">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Std Deviation</span>
+                            <span class="result-value" id="mc_std">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">VaR (95%)</span>
+                            <span class="result-value" id="mc_var95">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">VaR (99%)</span>
+                            <span class="result-value" id="mc_var99">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Expected Shortfall (95%)</span>
+                            <span class="result-value" id="mc_es95">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="mc_chart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- Market Data Tab -->
+        <div id="market" class="tab-content">
+            <div class="card">
+                <h2>Market Data</h2>
+                <div class="form-group">
+                    <label>Stock Symbol</label>
+                    <input type="text" id="market_symbol" placeholder="e.g., AAPL, MSFT, GOOGL" value="AAPL">
+                </div>
+                <button class="btn" onclick="getStockData()">Get Data</button>
+                <div id="market_result" style="display:none;">
+                    <div class="result-box" style="margin-top: 20px;">
+                        <div class="result-item">
+                            <span class="result-label">Symbol</span>
+                            <span class="result-value" id="market_symbol_display">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Current Price</span>
+                            <span class="result-value" id="market_price">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Tab -->
+        <div id="portfolio" class="tab-content">
+            <div class="card">
+                <h2>Portfolio Management</h2>
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="text" id="portfolio_user_id" placeholder="e.g., user_123" value="user_123">
+                </div>
+                <button class="btn" onclick="loadPortfolio()">Load Portfolio</button>
+                <button class="btn" onclick="refreshAnalytics()" style="background: #764ba2; margin-left: 10px;">Refresh Analytics</button>
+                
+                <div id="portfolio_display" style="display:none; margin-top: 30px;">
+                    <div class="card" style="background: #f8f9fa; box-shadow: none; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px;">Portfolio Summary</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Total Cost</div>
+                                <div class="stat-value" id="portfolio_cost">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Current Value</div>
+                                <div class="stat-value" id="portfolio_value">-</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Gain/Loss</div>
+                                <div class="stat-value" id="portfolio_pnl">-</div>
+                            </div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <div class="stat-label">Return %</div>
+                                <div class="stat-value" id="portfolio_return">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Holdings</h3>
+                        <table class="portfolio-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Quantity</th>
+                                    <th>Avg Price</th>
+                                    <th>Current Price</th>
+                                    <th>Total Cost</th>
+                                    <th>Current Value</th>
+                                    <th>Gain/Loss</th>
+                                    <th>Return %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolio_holdings">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function calculateBS() {
+            const data = {
+                S: parseFloat(document.getElementById('bs_s').value),
+                K: parseFloat(document.getElementById('bs_k').value),
+                T: parseFloat(document.getElementById('bs_t').value),
+                r: parseFloat(document.getElementById('bs_r').value),
+                sigma: parseFloat(document.getElementById('bs_sigma').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/algorithms/black_scholes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('bs_price').textContent = '$' + result.price.toFixed(4);
+                document.getElementById('bs_result').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function calculateGreeks() {
+            const data = {
+                S: parseFloat(document.getElementById('gr_s').value),
+                K: parseFloat(document.getElementById('gr_k').value),
+                T: parseFloat(document.getElementById('gr_t').value),
+                r: parseFloat(document.getElementById('gr_r').value),
+                sigma: parseFloat(document.getElementById('gr_sigma').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/algorithms/greeks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('greek_delta').textContent = result.delta.toFixed(4);
+                document.getElementById('greek_gamma').textContent = result.gamma.toFixed(6);
+                document.getElementById('greek_vega').textContent = result.vega.toFixed(4);
+                document.getElementById('greek_theta').textContent = result.theta.toFixed(4);
+                document.getElementById('greek_rho').textContent = result.rho.toFixed(4);
+                document.getElementById('greeks_result').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function calculateMonteCarlo() {
+            const data = {
+                S: parseFloat(document.getElementById('mc_s').value),
+                T: parseFloat(document.getElementById('mc_t').value),
+                r: parseFloat(document.getElementById('mc_r').value),
+                sigma: parseFloat(document.getElementById('mc_sigma').value),
+                n: parseInt(document.getElementById('mc_n').value)
+            };
+
+            try {
+                // Get simulation stats
+                const simResponse = await fetch(`${API_BASE}/algorithms/monte_carlo/simulate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const simResult = await simResponse.json();
+
+                // Get risk metrics
+                const riskResponse = await fetch(`${API_BASE}/algorithms/monte_carlo/var`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const riskResult = await riskResponse.json();
+
+                // Display results
+                document.getElementById('mc_mean').textContent = '$' + simResult.mean.toFixed(2);
+                document.getElementById('mc_std').textContent = '$' + simResult.std.toFixed(2);
+                document.getElementById('mc_var95').textContent = (riskResult.var_95 * 100).toFixed(2) + '%';
+                document.getElementById('mc_var99').textContent = (riskResult.var_99 * 100).toFixed(2) + '%';
+                document.getElementById('mc_es95').textContent = (riskResult.expected_shortfall_95 * 100).toFixed(2) + '%';
+                document.getElementById('mc_result').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function getStockData() {
+            const symbol = document.getElementById('market_symbol').value.toUpperCase();
+            try {
+                const response = await fetch(`${API_BASE}/market/price/${symbol}`);
+                const result = await response.json();
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    document.getElementById('market_symbol_display').textContent = result.symbol;
+                    document.getElementById('market_price').textContent = '$' + result.price.toFixed(2);
+                    document.getElementById('market_result').style.display = 'block';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function loadPortfolio() {
+            const userId = document.getElementById('portfolio_user_id').value;
+            try {
+                const response = await fetch(`${API_BASE}/portfolio/${userId}`);
+                const result = await response.json();
+                if (response.status === 404) {
+                    alert('Portfolio not found. Create one first?');
+                    return;
+                }
+                await refreshAnalytics();
+            } catch (error) {
+                alert('Error loading portfolio: ' + error.message);
+            }
+        }
+
+        async function refreshAnalytics() {
+            const userId = document.getElementById('portfolio_user_id').value;
+            try {
+                const response = await fetch(`${API_BASE}/portfolio/${userId}/analytics`);
+                const data = await response.json();
+                
+                if (response.status === 404) {
+                    alert('Portfolio not found');
+                    return;
+                }
+
+                // Update summary
+                document.getElementById('portfolio_cost').textContent = '$' + data.total_cost.toFixed(2);
+                document.getElementById('portfolio_value').textContent = '$' + data.total_value.toFixed(2);
+                document.getElementById('portfolio_pnl').textContent = '$' + data.total_gain_loss.toFixed(2);
+                document.getElementById('portfolio_return').textContent = data.total_gain_loss_pct.toFixed(2) + '%';
+
+                // Update holdings table
+                let html = '';
+                for (const [symbol, holding] of Object.entries(data.holdings)) {
+                    html += `<tr>
+                        <td>${symbol}</td>
+                        <td>${holding.qty.toFixed(2)}</td>
+                        <td>$${holding.avg_price.toFixed(2)}</td>
+                        <td>$${holding.current_price.toFixed(2)}</td>
+                        <td>$${holding.cost.toFixed(2)}</td>
+                        <td>$${holding.value.toFixed(2)}</td>
+                        <td style="color: ${holding.gain_loss >= 0 ? '#3c3' : '#c33'}">${holding.gain_loss >= 0 ? '+' : '-'}$${Math.abs(holding.gain_loss).toFixed(2)}</td>
+                        <td style="color: ${holding.gain_loss_pct >= 0 ? '#3c3' : '#c33'}">${holding.gain_loss_pct >= 0 ? '+' : ''}${holding.gain_loss_pct.toFixed(2)}%</td>
+                    </tr>`;
+                }
+                document.getElementById('portfolio_holdings').innerHTML = html;
+                document.getElementById('portfolio_display').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

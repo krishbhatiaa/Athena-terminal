@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+plotly
+numpy
+scipy
+pydantic[email]
+yfinance
+pytest
+pytest-cov
+sqlalchemy
+pandas
+PyJWT
+python-jose[cryptography]
+passlib[bcrypt]
